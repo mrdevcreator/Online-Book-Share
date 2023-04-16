@@ -535,5 +535,3 @@ exports.cancelExchange = (req, res) => {
     }
   });
 };
-
-const rr = "";
