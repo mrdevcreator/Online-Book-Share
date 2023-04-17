@@ -236,7 +236,7 @@ exports.viewBookbyId = (req, res) => {
   });
 };
 
-exports.bookList = (req, re) => {
+exports.bookList = (req, res) => {
   con.connect((error) => {
     if (error) throw error;
     const sql =

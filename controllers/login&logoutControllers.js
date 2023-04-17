@@ -1,3 +1,4 @@
+const { v4 } = require("uuid");
 const con = require("../config/db");
 const path = require("path");
 const session = require("express-session");
@@ -49,8 +50,11 @@ exports.login = (req, res) => {
         req.session.userId = admin.AdminId;
         req.session.role = "admin";
         req.session.loginTime = Date.now();
-
-        res.status(200).send(`You are logged in ${admin.UserName}`);
+        res.cookie("role", "admin", { maxAge: 900000, httpOnly: true });
+        res.status(200).json({
+          message: `You are logged in ${admin.Name}`,
+          role: "admin",
+        });
       });
     });
   } else if (role === "user") {
@@ -70,6 +74,11 @@ exports.login = (req, res) => {
       const user = results[0];
       //console.log(user);
       if (user.Status === "active") {
+        res.cookie("role", "user", {
+          maxAge: 900000,
+          httpOnly: true,
+          secure: true,
+        });
         res.status(409).send("Already logged in");
         return;
       }
@@ -94,7 +103,17 @@ exports.login = (req, res) => {
           req.session.role,
           req.session.loginTime
         );
-        res.status(200).send(`You are logged in ${user.Name}`);
+        res.cookie("role", v4(), {
+          maxAge: 900000,
+          httpOnly: true,
+          secure: true,
+        });
+        res.status(200).json({
+          message: `You are logged in ${user.Name}`,
+          name: user.Name,
+          usertype: "users",
+          email: user.Email,
+        });
       });
     });
   } else {
@@ -124,45 +143,20 @@ exports.requireUserLogin = (req, res, next) => {
     res.status(401).send("You must be logged in as user to access this route");
   }
 };
+
 exports.logout = (req, res) => {
-  const role = req.session.role;
-  const userId = req.session.userId;
-  console.log(role, userId);
-  if (role === "admin") {
-    const sql = "UPDATE Admin SET Status='inactive' WHERE AdminId=?";
-    con.query(sql, [userId], (error, result) => {
-      if (error) {
-        console.error("Error executing query: ", error);
-        res.status(500).send("Internal server error");
-        return;
-      }
-
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Error destroying session: ", err);
-        }
-        console.log(role, userId);
-        res.send("You are logged out Admin ");
-      });
-    });
-  } else if (role === "user") {
-    const sql = "UPDATE Users SET Status='inactive' WHERE UserId=?";
-    con.query(sql, [userId], (error, result) => {
-      if (error) {
-        console.error("Error executing query: ", error);
-        res.status(500).send("Internal server error");
-        return;
-      }
-
-      // Clear session variables
-      req.session.destroy((err) => {
-        if (err) {
-          console.error("Error destroying session: ", err);
-        }
-        res.send("You are logged out user");
-      });
-    });
-  } else {
-    res.status(400).send("Invalid role specified");
-  }
+  const role = req.body.role;
+  const id = req.body.id;
+  const email = req.body.email;
+  const sql = "UPDATE users SET Status='inactive' WHERE Email=?";
+  con.query(sql, [email], (error, result) => {
+    if (error) {
+      console.error("Error executing query: ", error);
+      res.status(500).send("Internal server error");
+      return;
+    }
+    console.log(req.session.userId);
+    req.session.destroy();
+    res.status(200).send("Logged out");
+  });
 };
