@@ -1,22 +1,22 @@
-const con = require("../config/db");
+import { connect, query } from "../config/db";
 
-exports.viewUser = (req, res) => {
-  con.connect((error) => {
+export function viewUser(req, res) {
+  connect((error) => {
     if (error) throw error;
     const sql = "select * from Users";
-    con.query(sql, (error, result) => {
+    query(sql, (error, result) => {
       if (error) throw error;
       res.status(200).json(result);
     });
   });
-};
+}
 
-exports.viewUserbyId = (req, res) => {
+export function viewUserbyId(req, res) {
   const userid = req.params.id;
-  con.connect((error) => {
+  connect((error) => {
     if (error) throw error;
     const sql = "SELECT * FROM Users where UserId=?";
-    con.query(sql, [userid], (error, result) => {
+    query(sql, [userid], (error, result) => {
       if (error) {
         throw error;
       } else if (result != "") {
@@ -26,9 +26,9 @@ exports.viewUserbyId = (req, res) => {
       }
     });
   });
-};
+}
 
-exports.create = (req, res) => {
+export function create(req, res) {
   const name = req.body.Name;
   const password = req.body.Password;
   const email = req.body.Email;
@@ -39,7 +39,7 @@ exports.create = (req, res) => {
   const verified_by = req.session.userId;
 
   const sql = "SELECT * FROM Users WHERE Email = ?";
-  con.query(sql, [email], (error, result) => {
+  query(sql, [email], (error, result) => {
     if (error) throw error;
     if (result.length > 0) {
       res
@@ -57,7 +57,7 @@ exports.create = (req, res) => {
     } else {
       const sql =
         "INSERT INTO Users(Name,Password,Email,Hostel_Name,Room_no,Phone_no,Created_By,Verified_By) VALUES(?,?,?,?,?,?,?,?)";
-      con.query(
+      query(
         sql,
         [
           name,
@@ -76,19 +76,19 @@ exports.create = (req, res) => {
       );
     }
   });
-};
+}
 
-exports.verifyUser = (req, res) => {
+export function verifyUser(req, res) {
   const adminId = req.session.userId;
   const userId = req.body.id;
   const checkSql = "SELECT Verified_BY FROM Users WHERE UserId = ?";
   const updateSql = "UPDATE Users SET Verified_BY = ? WHERE UserId = ?";
 
-  con.query(checkSql, [userId], (error, result) => {
+  query(checkSql, [userId], (error, result) => {
     if (error) throw error;
 
     if (result[0].Verified_BY === null) {
-      con.query(updateSql, [adminId, userId], (error, result) => {
+      query(updateSql, [adminId, userId], (error, result) => {
         if (error) throw error;
         res.status(200).send("Verified");
       });
@@ -96,18 +96,18 @@ exports.verifyUser = (req, res) => {
       res.status(400).send("Already Verified User");
     }
   });
-};
+}
 
-exports.removeWish = (req, res) => {
+export function removeWish(req, res) {
   const list_id = req.body.id;
   const sql = "DELETE FROM Wish_List WHERE List_Id = ? ";
-  con.query(sql, [list_id], (error, result) => {
+  query(sql, [list_id], (error, result) => {
     if (error) throw error;
     res.status(200).send("Removed");
   });
-};
+}
 
-exports.addBook = (req, res) => {
+export function addBook(req, res) {
   const {
     ownerId,
     book_title,
@@ -133,7 +133,7 @@ exports.addBook = (req, res) => {
   } else if (condition === "" || condition === null) {
     const sql =
       "INSERT INTO Book (Book_Owner, Book_Title, ISBN_NO, Publication_Year, Book_Authors, Book_type, Book_Rating, BookAdded_by) VALUES(?,?,?,?,?,?,?,?)";
-    con.query(
+    query(
       sql,
       [ownerId, book_title, isbn, pub_year, authors, type, rating, added_by],
       (error, result) => {
@@ -144,7 +144,7 @@ exports.addBook = (req, res) => {
   } else {
     const sql =
       "INSERT INTO Book (Book_Owner, Book_Title, ISBN_NO, Publication_Year, Book_Authors, Book_type, Book_Rating,Book_condition,BookAdded_by) VALUES(?,?,?,?,?,?,?,?,?)";
-    con.query(
+    query(
       sql,
       [
         ownerId,
@@ -163,9 +163,9 @@ exports.addBook = (req, res) => {
       }
     );
   }
-};
+}
 
-exports.updateBook = (req, res) => {
+export function updateBook(req, res) {
   const {
     book_title,
     isbn,
@@ -180,7 +180,7 @@ exports.updateBook = (req, res) => {
   const action = "Update";
   const book_id = req.params.id;
   const sql = " SELECT * FROM Book WHERE Book_Id = ?";
-  con.query(sql, [book_id], (err, result) => {
+  query(sql, [book_id], (err, result) => {
     if (err) {
       throw err;
     } else if (result != "") {
@@ -196,7 +196,7 @@ exports.updateBook = (req, res) => {
       const Action = result[0].Action;
       const sql2 =
         "UPDATE Book SET Book_Title = COALESCE(?,?),ISBN_NO = COALESCE(?,?),Publication_Year = COALESCE(?,?),Book_Authors = COALESCE(?,?),Book_type = COALESCE(?,?),Book_Rating = COALESCE(?,?),Book_condition = COALESCE(?,?),Availability = COALESCE(?,?),BookAdded_by = COALESCE(?,?),Action = COALESCE(?,?) WHERE Book_Id = ?";
-      con.query(
+      query(
         sql2,
         [
           book_title,
@@ -233,40 +233,40 @@ exports.updateBook = (req, res) => {
       );
     }
   });
-};
+}
 
-exports.delBook = (req, res) => {
+export function delBook(req, res) {
   const book_id = req.params.id;
   const sql = "DELETE FROM Book WHERE Book_Id = ?";
-  con.query(sql, [book_id], (err, result) => {
+  query(sql, [book_id], (err, result) => {
     if (err) throw err;
     res.status(204).send("Removed");
   });
-};
+}
 
-exports.seeallBook = (req, res) => {
-  con.connect((error) => {
+export function seeallBook(req, res) {
+  connect((error) => {
     if (error) throw error;
     const sql = "select * from Book";
-    con.query(sql, (error, result) => {
+    query(sql, (error, result) => {
       if (error) throw error;
       res.status(200).json(result);
     });
   });
-};
+}
 
-exports.borrowInfos = (req, res) => {
+export function borrowInfos(req, res) {
   const sql = "SELECT * FROM Borrow_request";
-  con.query(sql, (error, result) => {
+  query(sql, (error, result) => {
     if (error) throw error;
     res.status(200).json(result);
   });
-};
+}
 
-exports.exchangeInfos = (req, res) => {
+export function exchangeInfos(req, res) {
   const sql = "SELECT * FROM Exchange_request";
-  con.query(sql, (error, result) => {
+  query(sql, (error, result) => {
     if (error) throw error;
     res.status(200).json(result);
   });
-};
+}
